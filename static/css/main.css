@@ -85,7 +85,7 @@
 
 .section__cont:has(.cont__wrap-category) {
 	position: sticky;
-	top: 56px;
+	top: 57px;
 	left: 0;
 	background-color: var(--dt-white);
 	box-shadow: 0px 8px 13px 0px rgba(0, 0, 0, 0.04);
