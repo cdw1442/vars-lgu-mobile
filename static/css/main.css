@@ -83,7 +83,7 @@
 	z-index: 1;
 }
 
-.is-scrolled .section__cont:has(.cont__wrap-category) {
+.section__cont:has(.cont__wrap-category) {
 	position: sticky;
 	top: 56px;
 	left: 0;
@@ -92,6 +92,7 @@
 	overflow: hidden;
 	padding-bottom: 0;
 }
+
 .is-scrolled .section__cont:has(.cont__wrap-category) .cont__wrap {
 	position: relative;
 	padding: 0;
