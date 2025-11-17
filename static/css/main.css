@@ -49,6 +49,10 @@
 .main .info-col-wrap {
 	align-items: center;
 }
+.main .tooltip-wrap[data-popper-placement^=top] div[data-popper-arrow] {
+	left: calc(50% - 5px);
+	margin-left: 0;
+}
 
 .menu {
 	background-color: var(--dt-gray02);
