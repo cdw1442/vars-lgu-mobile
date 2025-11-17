@@ -1142,18 +1142,18 @@
 	<script>
 		document.addEventListener("DOMContentLoaded", () => {
 
-			const pageWrapper = document.querySelector(".page-wrapper");
-			const categoryWrap = document.querySelector(".cont__wrap-category");
-			const chipsGroup = categoryWrap.querySelector(".chips-group");
-			const buttons = Array.from(chipsGroup.querySelectorAll(".chips-menu"));
-			const btnTop = document.querySelector(".btn-top");
+			const pageWrapper   = document.querySelector(".page-wrapper");
+			const categoryWrap  = document.querySelector(".cont__wrap-category");
+			const chipsGroup    = categoryWrap?.querySelector(".chips-group");
+			const btnTop        = document.querySelector(".btn-top");
+			const buttons       = Array.from(chipsGroup.querySelectorAll(".chips-menu"));
 
-			const SCROLL_OFFSET = 140;
-			const SCROLLED_THRESHOLD = 10;
+			const SCROLL_OFFSET      = 140;  // 상단에서 띄울 높이
+			const SCROLLED_THRESHOLD = 10;   // is-scrolled 기준값
 
-			/* ===============================================
-			1) is-scrolled 추가/제거
-			================================================ */
+			/* ===============================================================
+				1) is-scrolled 상태 관리
+			=============================================================== */
 			const updateIsScrolled = () => {
 				if (window.scrollY > SCROLLED_THRESHOLD) {
 					pageWrapper.classList.add("is-scrolled");
@@ -1161,59 +1161,34 @@
 					pageWrapper.classList.remove("is-scrolled");
 				}
 			};
-			updateIsScrolled();
+			window.addEventListener("scroll", updateIsScrolled, { passive: true });
+			updateIsScrolled(); // 초기 적용
 
 
-			/* ===============================================
-			2) scroll-start / scroll-end
-			================================================ */
-			const updateHorizontalScrollState = () => {
-				const left = chipsGroup.scrollLeft;
-				const max = chipsGroup.scrollWidth - chipsGroup.clientWidth;
-
-				// 맨 앞
-				if (left <= 0) {
-					categoryWrap.classList.remove("scroll-start", "scroll-end");
-					return;
-				}
-
-				// 맨 뒤
-				if (left >= max - 1) {
-					categoryWrap.classList.remove("scroll-start");
-					categoryWrap.classList.add("scroll-end");
-					return;
-				}
-
-				// 중간
-				categoryWrap.classList.add("scroll-start");
-				categoryWrap.classList.remove("scroll-end");
-			};
-
-			chipsGroup.addEventListener("scroll", updateHorizontalScrollState);
-
-
-			/* ===============================================
-			3) 버튼 → 섹션 매핑
-			================================================ */
+			/* ===============================================================
+				2) 버튼 ↔ 섹션 매핑
+			=============================================================== */
 			const buttonToSection = new Map();
-			const sections = [];
+			const sectionList = [];
 
 			buttons.forEach(btn => {
-				const sel = btn.dataset.target;
-				const sec = document.querySelector(sel);
-				if (sec) {
-					buttonToSection.set(btn, sec);
-					sections.push(sec);
-				}
+				const selector = btn.dataset.target;
+				if (!selector) return;
+
+				const sec = document.querySelector(selector);
+				if (!sec) return;
+
+				buttonToSection.set(btn, sec);
+				sectionList.push(sec);
 			});
 
 
-			/* ===============================================
-			4) 버튼을 chips-group 중앙으로 이동
-			================================================ */
+			/* ===============================================================
+				3) chips-group 버튼 중앙 정렬
+			=============================================================== */
 			const centerButton = (btn) => {
-				const left = btn.offsetLeft;
-				const width = btn.offsetWidth;
+				const left      = btn.offsetLeft;
+				const width     = btn.offsetWidth;
 				const wrapWidth = chipsGroup.clientWidth;
 
 				chipsGroup.scrollTo({
@@ -1223,57 +1198,73 @@
 			};
 
 
-			/* ===============================================
-			5) 버튼 선택 공통 처리
-			================================================ */
+			/* ===============================================================
+				4) 버튼 선택 공통 함수
+			=============================================================== */
 			let isScrollingByClick = false;
-			let allowScrollSpy = true;
+			let scrollBlockTimer   = null;
 
 			const selectButton = (
 				btn,
 				{ scrollHorizontal = true, scrollVertical = false } = {}
 			) => {
+				// 이미 선택된 상태 + 스크롤로 호출 아님 → 무시
+				if (btn.classList.contains("is-selected") && !scrollVertical) return;
 
-				// vertical scroll이 아닐 때 이미 선택이면 무시
-				if (btn.classList.contains("is-selected") && scrollVertical === false) return;
-
+				// 선택 갱신
 				buttons.forEach(b => b.classList.remove("is-selected"));
 				btn.classList.add("is-selected");
 
 				// 가로 중앙 이동
 				if (scrollHorizontal) centerButton(btn);
 
-				// 세로 이동 (클릭 시)
+				// 세로 이동
 				if (scrollVertical) {
 					const sec = buttonToSection.get(btn);
 					if (!sec) return;
 
-					const targetY = sec.offsetTop - SCROLL_OFFSET;
+					// 현재 뷰포트 기준에서 섹션 위치 + 스크롤 오프셋
+					const rect    = sec.getBoundingClientRect();
+					const targetY = window.scrollY + rect.top - SCROLL_OFFSET;
 
-					// scroll spy 차단
-					allowScrollSpy = false;
 					isScrollingByClick = true;
+					if (scrollBlockTimer) clearTimeout(scrollBlockTimer);
+					scrollBlockTimer = setTimeout(() => {
+						isScrollingByClick = false;
+					}, 600);
 
 					window.scrollTo({
 						top: targetY,
 						behavior: "smooth",
 					});
-
-					// smooth scroll 종료 예상 시간 후 scroll spy 다시 켜기
-					setTimeout(() => {
-						isScrollingByClick = false;
-						allowScrollSpy = true;
-					}, 550);
 				}
 			};
 
 
-			/* ===============================================
-			6) 버튼 클릭 이벤트
-			- is-scrolled 유무 상관없이 140 보정 이동 무조건 작동
-			================================================ */
+			/* ===============================================================
+				5) 버튼 클릭 이벤트
+				- 맨 위(스크롤 거의 0)에서 클릭하면
+				먼저 살짝 아래로 보내 is-scrolled 레이아웃 발동 후
+				140px 보정 스크롤 수행
+			=============================================================== */
 			buttons.forEach(btn => {
 				btn.addEventListener("click", () => {
+
+					// 이미 선택이면 무시
+					if (btn.classList.contains("is-selected")) return;
+
+					// 🔸 아직 맨 위라 is-scrolled 아닌 상태라면
+					//    레이아웃을 is-scrolled 구간까지 한 번에 이동
+					if (window.scrollY <= SCROLLED_THRESHOLD) {
+						// 눈에 거의 안 보이는 정도로 즉시 이동
+						window.scrollTo({
+							top: SCROLLED_THRESHOLD + 1,
+							behavior: "auto"
+						});
+						updateIsScrolled();
+					}
+
+					// 이제는 is-scrolled 레이아웃 기준에서 140px 보정 적용
 					selectButton(btn, {
 						scrollHorizontal: true,
 						scrollVertical: true,
@@ -1282,31 +1273,32 @@
 			});
 
 
-			/* ===============================================
-			7) scroll spy – 자동 선택
-			- 화면 기준선 = scrollY + 140
-			- 기준선보다 위에 있는 섹션 중 가장 아래 섹션 활성화
-			================================================ */
-			const runScrollSpy = () => {
-				if (!allowScrollSpy || isScrollingByClick) return;
+			/* ===============================================================
+				6) Scroll Spy — 자동 is-selected 갱신
+				- 화면 상단 + 140px 기준
+				- 기준선보다 위에 있는 섹션 중 가장 아래 섹션 활성화
+			=============================================================== */
+			const onScrollSpy = () => {
+				if (isScrollingByClick) return; // 클릭 이동 중이면 무시
 
 				const lineY = window.scrollY + SCROLL_OFFSET;
 
-				let activeSec = null;
-				let highestTop = -Infinity;
+				let activeSection = null;
+				let activeTop = -Infinity;
 
-				sections.forEach(sec => {
-					if (sec.offsetTop <= lineY && sec.offsetTop > highestTop) {
-						highestTop = sec.offsetTop;
-						activeSec = sec;
+				sectionList.forEach(sec => {
+					const top = sec.offsetTop;
+					if (top <= lineY && top > activeTop) {
+						activeTop = top;
+						activeSection = sec;
 					}
 				});
 
-				if (!activeSec) activeSec = sections[0];
+				if (!activeSection) activeSection = sectionList[0];
 
 				let targetBtn = null;
 				buttonToSection.forEach((sec, btn) => {
-					if (sec === activeSec) targetBtn = btn;
+					if (sec === activeSection) targetBtn = btn;
 				});
 
 				if (targetBtn) {
@@ -1317,36 +1309,36 @@
 				}
 			};
 
-
-			/* ===============================================
-			8) 스크롤 이벤트 통합
-			================================================ */
 			window.addEventListener("scroll", () => {
 				updateIsScrolled();
-				runScrollSpy();
+				onScrollSpy();
 			}, { passive: true });
 
 
-
-			/* ===============================================
-			9) TOP 버튼
-			================================================ */
+			/* ===============================================================
+				7) TOP 버튼 기능
+				- 최상단으로 부드럽게 이동
+				- 스크롤 완료 후 is-scrolled 제거
+			=============================================================== */
 			btnTop.addEventListener("click", () => {
-				allowScrollSpy = false;
 
 				window.scrollTo({
 					top: 0,
-					behavior: "smooth",
+					behavior: "smooth"
 				});
 
-				setTimeout(() => {
-					allowScrollSpy = true;
-				}, 500);
+				const checkDone = () => {
+					if (window.scrollY === 0) {
+						pageWrapper.classList.remove("is-scrolled");
+					} else {
+						requestAnimationFrame(checkDone);
+					}
+				};
+				requestAnimationFrame(checkDone);
 			});
 
 		});
 	</script>
-
 
 
 
