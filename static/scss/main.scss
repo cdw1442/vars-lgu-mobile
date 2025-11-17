@@ -51,7 +51,13 @@
 	}
 	// 보이는 ARS 자동실행 토글 : 2025.11.17 SM개발건 추가
 	.info-col-wrap {
-		align-items: center;
+		border-radius: 0;
+		.row {
+			justify-content: flex-end;
+			justify-content: center;
+			justify-content: unset;
+			justify-content: space-between;
+		}
 	}
 	.tooltip-wrap[data-popper-placement^=top] div[data-popper-arrow] {
 		left: calc(50% - 5px);

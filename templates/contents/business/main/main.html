@@ -308,11 +308,11 @@
 							오픈시 is-selected 추가
 							<button type="button" class="chips chips-menu chips-more is-selected">
 						-->
-						<button type="button" class="chips chips-menu chips-more">
+						<!-- <button type="button" class="chips chips-menu chips-more">
 							<span class="arrow"></span>
-						</button>
+						</button> -->
 
-						<button type="button" class="chips chips-menu chips-more is-selected">
+						<button type="button" class="chips chips-menu chips-more hidden">  <!-- 오픈시 is-selected 추가 -->
 							<span class="arrow"></span>
 						</button>
 					</div>
@@ -1138,6 +1138,116 @@
 				}
 			});
 		});
+	</script>
+	<script>
+		document.addEventListener("DOMContentLoaded", () => {
+
+			const pageWrapper = document.querySelector(".page-wrapper");
+			const categoryWrap = document.querySelector(".cont__wrap-category");
+			const chipsGroup = categoryWrap?.querySelector(".chips-group");
+			const btnTop = document.querySelector(".btn-top");
+
+			if (!pageWrapper || !categoryWrap || !chipsGroup) return;
+
+			/* ===========================
+				STATE MACHINE 정의
+			=========================== */
+			const STATE = {
+				TOP: "top",
+				MIDDLE: "middle",
+				END: "end",
+			};
+
+			let currentState = STATE.TOP;
+
+			const applyState = (state, left, maxScroll) => {
+				currentState = state;
+
+				// reset
+				pageWrapper.classList.remove("is-scrolled");
+				categoryWrap.classList.remove("scroll-start", "scroll-end");
+
+				switch (state) {
+					case STATE.TOP:
+						// 세로스크롤 최상단 → 모든 클래스 제거
+						return;
+
+					case STATE.MIDDLE:
+						pageWrapper.classList.add("is-scrolled");
+
+						// ★ 중요: chips-group 맨 앞이면 scroll-start 없음
+						if (left === 0) return;
+
+						// 중간이면 scroll-start
+						categoryWrap.classList.add("scroll-start");
+						return;
+
+					case STATE.END:
+						pageWrapper.classList.add("is-scrolled");
+						categoryWrap.classList.add("scroll-end");
+						return;
+				}
+			};
+
+
+			/* ===========================
+				STATE 결정 로직
+			=========================== */
+			const computeState = () => {
+				const y = window.scrollY;
+
+				// ① 세로 스크롤 최상단
+				if (y <= 0) return STATE.TOP;
+
+				// 가로 스크롤 상태
+				const left = chipsGroup.scrollLeft;
+				const max = chipsGroup.scrollWidth - chipsGroup.clientWidth;
+
+				// ③ 맨 끝
+				if (left >= max - 1) return STATE.END;
+
+				// ② 중간 또는 맨 앞
+				return STATE.MIDDLE;
+			};
+
+
+			/* ===========================
+				이벤트 통합 처리 (세로 + 가로)
+			=========================== */
+			const update = () => {
+				const state = computeState();
+				const left = chipsGroup.scrollLeft;
+				const max = chipsGroup.scrollWidth - chipsGroup.clientWidth;
+
+				if (state !== currentState) {
+					applyState(state, left, max);
+				} else {
+					// 같은 상태라도 left 변화로 scroll-start/scroll-end 업데이트 필요
+					applyState(state, left, max);
+				}
+			};
+
+			window.addEventListener("scroll", update, { passive: true });
+			chipsGroup.addEventListener("scroll", update, { passive: true });
+
+			/* TOP 버튼 → 최상단 도착 후 TOP 상태 적용 */
+			btnTop?.addEventListener("click", () => {
+				window.scrollTo({ top: 0, behavior: "smooth" });
+
+				const wait = () => {
+					if (window.scrollY <= 0) {
+						applyState(STATE.TOP, 0, 0);
+						window.removeEventListener("scroll", wait);
+					}
+				};
+				window.addEventListener("scroll", wait);
+			});
+
+			// 초기 실행
+			update();
+		});
+
+
 	</script>
 </body>
 </html>
