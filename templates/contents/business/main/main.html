@@ -266,37 +266,37 @@
 							select 시 is-selected class 추가
 							<button type="button" class="chips chips-menu is-selected">
 						-->
-						<button type="button" class="chips chips-menu is-selected">
+						<button type="button" class="chips chips-menu is-selected" data-target="#menu01">
 							<span class="img-box icon"><img src="../../../../static/images/icon/ic-chips-flag.svg" alt="많이 찾는 문의"></span>
 							<span class="txt">많이 찾는 문의</span>
 						</button>
 			
-						<button type="button" class="chips chips-menu">
+						<button type="button" class="chips chips-menu" data-target="#menu02">
 							<!-- <span class="icon"></span> -->
 							<span class="txt">요금 및 납부</span>
 						</button>
 			
-						<button type="button" class="chips chips-menu">
+						<button type="button" class="chips chips-menu" data-target="#menu03">
 							<!-- <span class="icon"></span> -->
 							<span class="txt">가입정보</span>
 						</button>
 			
-						<button type="button" class="chips chips-menu">
+						<button type="button" class="chips chips-menu" data-target="#menu04">
 							<!-- <span class="icon"></span> -->
 							<span class="txt">사용현황</span>
 						</button>
 			
-						<button type="button" class="chips chips-menu">
+						<button type="button" class="chips chips-menu" data-target="#menu05">
 							<!-- <span class="icon"></span> -->
 							<span class="txt">휴대폰 결제</span>
 						</button>
 			
-						<button type="button" class="chips chips-menu">
+						<button type="button" class="chips chips-menu" data-target="#menu06">
 							<!-- <span class="icon"></span> -->
 							<span class="txt">해외로밍</span>
 						</button>
 			
-						<button type="button" class="chips chips-menu">
+						<button type="button" class="chips chips-menu" data-target="#menu07">
 							<!-- <span class="icon"></span> -->
 							<span class="txt">정지ㆍ분실ㆍ통화품질</span>
 						</button>
@@ -322,7 +322,7 @@
 			<!-- 전체 메뉴 카드 리스트 영역 -->
 			<div class="section__cont menu">
 				<!-- 많이 찾는 문의 -->
-				<div class="cont__wrap cont__wrap-freqMenu">
+				<div class="cont__wrap cont__wrap-freqMenu" id="menu01">
 					<div class="con__tit-box">
 						<h6 class="tit-head">
 							<span class="ico"></span>
@@ -463,7 +463,7 @@
 					</div>
 				</div>
 				
-				<div class="cont__wrap">
+				<div class="cont__wrap" id="menu02">
 					<div class="con__tit-box">
 						<h6 class="tit-head">
 							<span class="txt-title">요금 및 납부</span>
@@ -616,7 +616,7 @@
 						</div>
 					</div>
 				</div>
-				<div class="cont__wrap">
+				<div class="cont__wrap" id="menu03">
 					<div class="con__tit-box">
 						<h6 class="tit-head">
 							<span class="txt-title">가입정보</span>
@@ -719,7 +719,7 @@
 						</div>
 					</div>
 				</div>
-				<div class="cont__wrap">
+				<div class="cont__wrap" id="menu04">
 					<div class="con__tit-box">
 						<h6 class="tit-head">
 							<span class="txt-title">사용현황</span>
@@ -759,7 +759,7 @@
 						</div>
 					</div>
 				</div>
-				<div class="cont__wrap">
+				<div class="cont__wrap" id="menu05">
 					<div class="con__tit-box">
 						<h6 class="tit-head">
 							<span class="txt-title">휴대폰 결제</span>
@@ -815,7 +815,7 @@
 						</div>
 					</div>
 				</div>
-				<div class="cont__wrap">
+				<div class="cont__wrap" id="menu06">
 					<div class="con__tit-box">
 						<h6 class="tit-head">
 							<span class="txt-title">해외로밍</span>
@@ -886,7 +886,7 @@
 						</div>
 					</div>
 				</div>
-				<div class="cont__wrap">
+				<div class="cont__wrap" id="menu07">
 					<div class="con__tit-box">
 						<h6 class="tit-head">
 							<span class="txt-title">정지ㆍ분실ㆍ통화품질</span>
@@ -1142,112 +1142,205 @@
 	<script>
 		document.addEventListener("DOMContentLoaded", () => {
 
-			const pageWrapper = document.querySelector(".page-wrapper");
-			const categoryWrap = document.querySelector(".cont__wrap-category");
-			const chipsGroup = categoryWrap?.querySelector(".chips-group");
-			const btnTop = document.querySelector(".btn-top");
+			const pageWrapper   = document.querySelector(".page-wrapper");
+			const categoryWrap  = document.querySelector(".cont__wrap-category");
+			const chipsGroup    = categoryWrap?.querySelector(".chips-group");
+			const btnTop        = document.querySelector(".btn-top");
+			const buttons       = Array.from(chipsGroup.querySelectorAll(".chips-menu"));
 
-			if (!pageWrapper || !categoryWrap || !chipsGroup) return;
+			const SCROLL_OFFSET      = 140;  // 상단에서 띄울 높이
+			const SCROLLED_THRESHOLD = 10;   // is-scrolled 기준값
 
-			/* ===========================
-				STATE MACHINE 정의
-			=========================== */
-			const STATE = {
-				TOP: "top",
-				MIDDLE: "middle",
-				END: "end",
-			};
-
-			let currentState = STATE.TOP;
-
-			const applyState = (state, left, maxScroll) => {
-				currentState = state;
-
-				// reset
-				pageWrapper.classList.remove("is-scrolled");
-				categoryWrap.classList.remove("scroll-start", "scroll-end");
-
-				switch (state) {
-					case STATE.TOP:
-						// 세로스크롤 최상단 → 모든 클래스 제거
-						return;
-
-					case STATE.MIDDLE:
-						pageWrapper.classList.add("is-scrolled");
-
-						// ★ 중요: chips-group 맨 앞이면 scroll-start 없음
-						if (left === 0) return;
-
-						// 중간이면 scroll-start
-						categoryWrap.classList.add("scroll-start");
-						return;
-
-					case STATE.END:
-						pageWrapper.classList.add("is-scrolled");
-						categoryWrap.classList.add("scroll-end");
-						return;
-				}
-			};
-
-
-			/* ===========================
-				STATE 결정 로직
-			=========================== */
-			const computeState = () => {
-				const y = window.scrollY;
-
-				// ① 세로 스크롤 최상단
-				if (y <= 0) return STATE.TOP;
-
-				// 가로 스크롤 상태
-				const left = chipsGroup.scrollLeft;
-				const max = chipsGroup.scrollWidth - chipsGroup.clientWidth;
-
-				// ③ 맨 끝
-				if (left >= max - 1) return STATE.END;
-
-				// ② 중간 또는 맨 앞
-				return STATE.MIDDLE;
-			};
-
-
-			/* ===========================
-				이벤트 통합 처리 (세로 + 가로)
-			=========================== */
-			const update = () => {
-				const state = computeState();
-				const left = chipsGroup.scrollLeft;
-				const max = chipsGroup.scrollWidth - chipsGroup.clientWidth;
-
-				if (state !== currentState) {
-					applyState(state, left, max);
+			/* ===============================================================
+				1) is-scrolled 상태 관리
+			=============================================================== */
+			const updateIsScrolled = () => {
+				if (window.scrollY > SCROLLED_THRESHOLD) {
+					pageWrapper.classList.add("is-scrolled");
 				} else {
-					// 같은 상태라도 left 변화로 scroll-start/scroll-end 업데이트 필요
-					applyState(state, left, max);
+					pageWrapper.classList.remove("is-scrolled");
 				}
 			};
+			window.addEventListener("scroll", updateIsScrolled, { passive: true });
+			updateIsScrolled(); // 초기 적용
 
-			window.addEventListener("scroll", update, { passive: true });
-			chipsGroup.addEventListener("scroll", update, { passive: true });
 
-			/* TOP 버튼 → 최상단 도착 후 TOP 상태 적용 */
-			btnTop?.addEventListener("click", () => {
-				window.scrollTo({ top: 0, behavior: "smooth" });
+			/* ===============================================================
+				2) 버튼 ↔ 섹션 매핑
+			=============================================================== */
+			const buttonToSection = new Map();
+			const sectionList = [];
 
-				const wait = () => {
-					if (window.scrollY <= 0) {
-						applyState(STATE.TOP, 0, 0);
-						window.removeEventListener("scroll", wait);
-					}
-				};
-				window.addEventListener("scroll", wait);
+			buttons.forEach(btn => {
+				const selector = btn.dataset.target;
+				if (!selector) return;
+
+				const sec = document.querySelector(selector);
+				if (!sec) return;
+
+				buttonToSection.set(btn, sec);
+				sectionList.push(sec);
 			});
 
-			// 초기 실행
-			update();
+
+			/* ===============================================================
+				3) chips-group 버튼 중앙 정렬
+			=============================================================== */
+			const centerButton = (btn) => {
+				const left      = btn.offsetLeft;
+				const width     = btn.offsetWidth;
+				const wrapWidth = chipsGroup.clientWidth;
+
+				chipsGroup.scrollTo({
+					left: left - wrapWidth / 2 + width / 2,
+					behavior: "smooth",
+				});
+			};
+
+
+			/* ===============================================================
+				4) 버튼 선택 공통 함수
+			=============================================================== */
+			let isScrollingByClick = false;
+			let scrollBlockTimer   = null;
+
+			const selectButton = (
+				btn,
+				{ scrollHorizontal = true, scrollVertical = false } = {}
+			) => {
+				// 이미 선택된 상태 + 스크롤로 호출 아님 → 무시
+				if (btn.classList.contains("is-selected") && !scrollVertical) return;
+
+				// 선택 갱신
+				buttons.forEach(b => b.classList.remove("is-selected"));
+				btn.classList.add("is-selected");
+
+				// 가로 중앙 이동
+				if (scrollHorizontal) centerButton(btn);
+
+				// 세로 이동
+				if (scrollVertical) {
+					const sec = buttonToSection.get(btn);
+					if (!sec) return;
+
+					// 현재 뷰포트 기준에서 섹션 위치 + 스크롤 오프셋
+					const rect    = sec.getBoundingClientRect();
+					const targetY = window.scrollY + rect.top - SCROLL_OFFSET;
+
+					isScrollingByClick = true;
+					if (scrollBlockTimer) clearTimeout(scrollBlockTimer);
+					scrollBlockTimer = setTimeout(() => {
+						isScrollingByClick = false;
+					}, 600);
+
+					window.scrollTo({
+						top: targetY,
+						behavior: "smooth",
+					});
+				}
+			};
+
+
+			/* ===============================================================
+				5) 버튼 클릭 이벤트
+				- 맨 위(스크롤 거의 0)에서 클릭하면
+				먼저 살짝 아래로 보내 is-scrolled 레이아웃 발동 후
+				140px 보정 스크롤 수행
+			=============================================================== */
+			buttons.forEach(btn => {
+				btn.addEventListener("click", () => {
+
+					// 이미 선택이면 무시
+					if (btn.classList.contains("is-selected")) return;
+
+					// 🔸 아직 맨 위라 is-scrolled 아닌 상태라면
+					//    레이아웃을 is-scrolled 구간까지 한 번에 이동
+					if (window.scrollY <= SCROLLED_THRESHOLD) {
+						// 눈에 거의 안 보이는 정도로 즉시 이동
+						window.scrollTo({
+							top: SCROLLED_THRESHOLD + 1,
+							behavior: "auto"
+						});
+						updateIsScrolled();
+					}
+
+					// 이제는 is-scrolled 레이아웃 기준에서 140px 보정 적용
+					selectButton(btn, {
+						scrollHorizontal: true,
+						scrollVertical: true,
+					});
+				});
+			});
+
+
+			/* ===============================================================
+				6) Scroll Spy — 자동 is-selected 갱신
+				- 화면 상단 + 140px 기준
+				- 기준선보다 위에 있는 섹션 중 가장 아래 섹션 활성화
+			=============================================================== */
+			const onScrollSpy = () => {
+				if (isScrollingByClick) return; // 클릭 이동 중이면 무시
+
+				const lineY = window.scrollY + SCROLL_OFFSET;
+
+				let activeSection = null;
+				let activeTop = -Infinity;
+
+				sectionList.forEach(sec => {
+					const top = sec.offsetTop;
+					if (top <= lineY && top > activeTop) {
+						activeTop = top;
+						activeSection = sec;
+					}
+				});
+
+				if (!activeSection) activeSection = sectionList[0];
+
+				let targetBtn = null;
+				buttonToSection.forEach((sec, btn) => {
+					if (sec === activeSection) targetBtn = btn;
+				});
+
+				if (targetBtn) {
+					selectButton(targetBtn, {
+						scrollHorizontal: true,
+						scrollVertical: false,
+					});
+				}
+			};
+
+			window.addEventListener("scroll", () => {
+				updateIsScrolled();
+				onScrollSpy();
+			}, { passive: true });
+
+
+			/* ===============================================================
+				7) TOP 버튼 기능
+				- 최상단으로 부드럽게 이동
+				- 스크롤 완료 후 is-scrolled 제거
+			=============================================================== */
+			btnTop.addEventListener("click", () => {
+
+				window.scrollTo({
+					top: 0,
+					behavior: "smooth"
+				});
+
+				const checkDone = () => {
+					if (window.scrollY === 0) {
+						pageWrapper.classList.remove("is-scrolled");
+					} else {
+						requestAnimationFrame(checkDone);
+					}
+				};
+				requestAnimationFrame(checkDone);
+			});
+
 		});
-
-
 	</script>
+
+
+
 </body>
 </html>
