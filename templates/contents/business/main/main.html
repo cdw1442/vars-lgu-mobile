@@ -1311,6 +1311,19 @@
 					}
 				});
 
+				// 마지막 섹션 예외 처리
+				const lastSection = sectionList[sectionList.length - 1];
+				const lastBottom = lastSection.offsetTop + lastSection.offsetHeight;
+
+				// 현재 스크롤이 거의 페이지 끝일 때 (5px 오차 허용)
+				const isAtPageBottom =
+					window.innerHeight + window.scrollY >= document.body.scrollHeight - 5;
+
+				if (isAtPageBottom || lineY >= lastSection.offsetTop) {
+					activeSection = lastSection;
+				}
+
+				// 버튼 매핑
 				if (!activeSection) activeSection = sectionList[0];
 
 				let targetBtn = null;
